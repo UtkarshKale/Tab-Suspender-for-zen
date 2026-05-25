@@ -2,7 +2,7 @@
 
 Automatically suspends inactive background tabs to save **70% to 80% of your system RAM**. Tailored specifically for **Zen Browser** and **Firefox** utilizing modern WebExtensions Manifest V3 architecture.
 
-This extension is heavily inspired by Sergey Drpa's excellent work on [Tab-Suspender](https://github.com/sergey-drpa/Tab-Suspender), modernized and redesigned with a premium, high-aesthetic glassmorphic UI and advanced diagnostics.
+This extension is heavily inspired by Sergey Drpa's excellent work on [Tab-Suspender](https://github.com/sergey-drpa/Tab-Suspender).
 
 ---
 
