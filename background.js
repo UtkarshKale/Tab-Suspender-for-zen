@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
   preventAudio: true,
   preventPinned: true,
   preventForms: true,
+  pausedUntil: 0, // Timestamp when pause expires (0 = not paused)
   whitelist: [
     '*mail.google.com*',
     '*outlook.live.com*',
@@ -64,9 +65,46 @@ function isWhitelisted(url, whitelist) {
   }
 }
 
+// Add a tab to suspension history
+async function addToHistory(tab) {
+  try {
+    const result = await browserAPI.storage.local.get('history');
+    const history = result.history || [];
+    
+    // Create new history item
+    const newItem = {
+      id: `${tab.url}_${Date.now()}`,
+      url: tab.url,
+      title: tab.title || 'Suspended Tab',
+      favIconUrl: tab.favIconUrl || '',
+      suspendedAt: Date.now()
+    };
+    
+    // Add to top of list
+    history.unshift(newItem);
+    
+    // Cap history list at 200 to save memory & storage limits
+    const cappedHistory = history.slice(0, 200);
+    
+    await browserAPI.storage.local.set({ history: cappedHistory });
+    
+    // Notify options/popup page if open
+    browserAPI.runtime.sendMessage({ method: 'historyUpdated', history: cappedHistory }).catch(() => {
+      // Ignore error if page is closed
+    });
+  } catch (e) {
+    console.error('Failed to save tab in history:', e);
+  }
+}
+
 // Core function to check if a tab is eligible for suspension
 async function checkAndSuspendTab(tab, settings) {
   if (!settings.active) return;
+  
+  // Pause status check
+  if (settings.pausedUntil && Date.now() < settings.pausedUntil) {
+    return;
+  }
   
   // Never suspend active tabs, extension pages, or invalid URLs
   if (tab.active) return;
@@ -98,6 +136,9 @@ async function checkAndSuspendTab(tab, settings) {
   // Perform suspension
   console.log(`Suspending tab ${tab.id}: ${tab.title} (${tab.url})`);
   
+  // Add to suspension history
+  await addToHistory(tab);
+  
   if (settings.mode === 'silent') {
     // Native Silent mode - discard the tab directly
     await browserAPI.tabs.discard(tab.id).catch(console.error);
@@ -114,6 +155,11 @@ async function checkAndSuspendTab(tab, settings) {
 async function checkAllTabs() {
   const settings = await getSettings();
   if (!settings.active) return;
+  
+  // Pause status check
+  if (settings.pausedUntil && Date.now() < settings.pausedUntil) {
+    return;
+  }
 
   const now = Date.now();
   const idleTimeoutMs = settings.timeout * 60 * 1000;
@@ -169,6 +215,7 @@ browserAPI.contextMenus.onClicked.addListener(async (info, tab) => {
       // Temporarily bypass active status constraint for manual request
       await browserAPI.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         // Suspending current tab requires visual mode, otherwise native discard will unload active tab (not standard)
+        await addToHistory(tab);
         const parkUrl = browserAPI.runtime.getURL(
           `park.html?url=${encodeURIComponent(tab.url)}&title=${encodeURIComponent(tab.title || '')}&favIconUrl=${encodeURIComponent(tab.favIconUrl || '')}`
         );
@@ -231,6 +278,11 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
       setTimeout(() => {
         browserAPI.tabs.discard(sender.tab.id).catch(console.error);
       }, 500); // Small delay to let page stabilize
+    }
+  }
+  else if (message.method === 'manualSuspend') {
+    if (message.tab) {
+      addToHistory(message.tab);
     }
   }
   else if (message.method === 'unsuspendTab') {

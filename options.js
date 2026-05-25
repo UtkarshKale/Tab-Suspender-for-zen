@@ -10,8 +10,13 @@
 
   // General Settings Elements
   const activeCheck = document.getElementById('setting-active');
-  const timeoutSelect = document.getElementById('setting-timeout');
+  const timeoutSelect = document.getElementById('setting-timeout'); // range slider input
   const modeRadios = document.getElementsByName('setting-mode');
+  
+  // Custom Slider Elements
+  const sliderTimeoutVal = document.getElementById('slider-timeout-value');
+  const sliderArrowLeft = document.getElementById('slider-arrow-left');
+  const sliderArrowRight = document.getElementById('slider-arrow-right');
 
   // Whitelist Elements
   const whitelistInput = document.getElementById('whitelist-input');
@@ -24,12 +29,21 @@
   const preventFormsCheck = document.getElementById('setting-prevent-forms');
   const autoRestoreCheck = document.getElementById('setting-auto-restore');
 
+  // Suspension History Elements
+  const historySearchInput = document.getElementById('history-search-input');
+  const historyGrid = document.getElementById('suspended-history-grid');
+  const ramSavedEl = document.getElementById('history-ram-saved');
+  const totalSuspendedEl = document.getElementById('history-total-suspended');
+  const clearHistoryBtn = document.getElementById('clear-history-btn');
+  const exportHistoryBtn = document.getElementById('export-history-btn');
+
   // Notification Toast
   const toastNotify = document.getElementById('toast-notify');
   let toastTimer;
 
-  // Active settings state
+  // Active states
   let currentSettings = {};
+  let fullHistoryList = [];
 
   // 1. Sidebar Tab Navigation Logic
   function initNavigation() {
@@ -45,6 +59,10 @@
         tabPanels.forEach(panel => {
           if (panel.id === `tab-${targetTab}`) {
             panel.classList.add('active');
+            // Lazy load history when tab is clicked
+            if (targetTab === 'history') {
+              loadHistory();
+            }
           } else {
             panel.classList.remove('active');
           }
@@ -64,6 +82,22 @@
     }, 2500);
   }
 
+  // Formatting Timeouts Helper
+  function updateTimeoutDisplay(val) {
+    const minutes = parseInt(val);
+    if (minutes < 60) {
+      sliderTimeoutVal.textContent = `${minutes} Minutes`;
+    } else {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      if (remainingMinutes === 0) {
+        sliderTimeoutVal.textContent = `${hours} Hour${hours > 1 ? 's' : ''}`;
+      } else {
+        sliderTimeoutVal.textContent = `${hours} Hour${hours > 1 ? 's' : ''} ${remainingMinutes} Mins`;
+      }
+    }
+  }
+
   // 2. Load Saved Settings
   async function loadSettings() {
     const result = await browserAPI.storage.local.get('settings');
@@ -71,7 +105,10 @@
 
     // General Controls
     activeCheck.checked = currentSettings.active !== undefined ? currentSettings.active : true;
-    timeoutSelect.value = currentSettings.timeout || '30';
+    
+    const timeoutVal = currentSettings.timeout || 30;
+    timeoutSelect.value = timeoutVal;
+    updateTimeoutDisplay(timeoutVal);
     
     const mode = currentSettings.mode || 'visual';
     for (const radio of modeRadios) {
@@ -105,9 +142,30 @@
       saveSettings({ active: e.target.checked });
     });
 
-    // Inactivity timeout duration
+    // Inactivity timeout duration range input
+    timeoutSelect.addEventListener('input', (e) => {
+      updateTimeoutDisplay(e.target.value);
+    });
+    
     timeoutSelect.addEventListener('change', (e) => {
       saveSettings({ timeout: parseInt(e.target.value) });
+    });
+
+    // Flanking arrows for time adjustment
+    sliderArrowLeft.addEventListener('click', () => {
+      let val = parseInt(timeoutSelect.value) - 5;
+      if (val < 5) val = 5;
+      timeoutSelect.value = val;
+      updateTimeoutDisplay(val);
+      saveSettings({ timeout: val });
+    });
+
+    sliderArrowRight.addEventListener('click', () => {
+      let val = parseInt(timeoutSelect.value) + 5;
+      if (val > 300) val = 300;
+      timeoutSelect.value = val;
+      updateTimeoutDisplay(val);
+      saveSettings({ timeout: val });
     });
 
     // Suspension mode radios
@@ -119,22 +177,19 @@
       });
     }
 
-    // Audible exclusion
+    // Advanced exclusions checks
     preventAudioCheck.addEventListener('change', (e) => {
       saveSettings({ preventAudio: e.target.checked });
     });
 
-    // Pinned exclusion
     preventPinnedCheck.addEventListener('change', (e) => {
       saveSettings({ preventPinned: e.target.checked });
     });
 
-    // Form inputs exclusion
     preventFormsCheck.addEventListener('change', (e) => {
       saveSettings({ preventForms: e.target.checked });
     });
 
-    // Auto-restore tab on focus option
     autoRestoreCheck.addEventListener('change', (e) => {
       saveSettings({ autoRestoreTab: e.target.checked });
     });
@@ -203,10 +258,7 @@
   }
 
   function initWhitelistBindings() {
-    // Button click
     addWhitelistBtn.addEventListener('click', handleAddWhitelist);
-
-    // Enter key press in input
     whitelistInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         handleAddWhitelist();
@@ -214,11 +266,251 @@
     });
   }
 
+  // 6. Suspended History Management
+  async function loadHistory() {
+    const result = await browserAPI.storage.local.get('history');
+    fullHistoryList = result.history || [];
+    renderHistory(fullHistoryList);
+  }
+
+  // Helper: Relative time since suspension
+  function getRelativeTime(timestamp) {
+    const now = Date.now();
+    const elapsedSeconds = Math.floor((now - timestamp) / 1000);
+    
+    if (elapsedSeconds < 60) return 'Just now';
+    
+    const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+    if (elapsedMinutes < 60) return `${elapsedMinutes}m ago`;
+    
+    const elapsedHours = Math.floor(elapsedMinutes / 60);
+    if (elapsedHours < 24) return `${elapsedHours}h ago`;
+    
+    const elapsedDays = Math.floor(elapsedHours / 24);
+    if (elapsedDays === 1) return 'Yesterday';
+    return `${elapsedDays} days ago`;
+  }
+
+  // Helper: extract root hostname domain
+  function getDomain(url) {
+    try {
+      const parsed = new URL(url);
+      return parsed.hostname;
+    } catch (e) {
+      return 'Unknown';
+    }
+  }
+
+  // Render History Items with optional search filter
+  function renderHistory(historyData, filterQuery = '') {
+    historyGrid.innerHTML = '';
+    
+    // Filter items based on query
+    const filteredData = historyData.filter(item => {
+      const title = (item.title || '').toLowerCase();
+      const url = (item.url || '').toLowerCase();
+      const search = filterQuery.toLowerCase();
+      return title.includes(search) || url.includes(search);
+    });
+
+    // Update Widgets Dashboard
+    totalSuspendedEl.textContent = historyData.length;
+    
+    // Sum estimated saved RAM (realistic baseline: 120MB per suspended tab)
+    const ramMB = historyData.length * 120;
+    if (ramMB < 1024) {
+      ramSavedEl.textContent = `${ramMB} MB`;
+    } else {
+      const ramGB = (ramMB / 1024).toFixed(1);
+      ramSavedEl.textContent = `${ramGB} GB`;
+    }
+
+    if (filteredData.length === 0) {
+      historyGrid.innerHTML = `
+        <div class="setting-info" style="text-align: center; padding: 40px; opacity: 0.5;">
+          <p>${filterQuery ? 'No history entries match your search.' : 'Your suspension history is empty. Inactive tabs will populate here once suspended.'}</p>
+        </div>
+      `;
+      return;
+    }
+
+    filteredData.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.className = 'history-card glass-panel';
+
+      const left = document.createElement('div');
+      left.className = 'history-card-left';
+
+      // Favicon icon
+      const favicon = document.createElement('img');
+      favicon.className = 'history-card-favicon';
+      if (item.favIconUrl && item.favIconUrl !== 'undefined') {
+        favicon.src = item.favIconUrl;
+      } else {
+        favicon.src = 'icons/icon128.png';
+      }
+      favicon.onerror = () => {
+        favicon.src = 'icons/icon128.png';
+      };
+
+      const info = document.createElement('div');
+      info.className = 'history-card-info';
+
+      const title = document.createElement('span');
+      title.className = 'history-card-title';
+      title.textContent = item.title;
+      title.title = item.title;
+
+      const meta = document.createElement('div');
+      meta.className = 'history-card-meta';
+      
+      const domain = document.createElement('span');
+      domain.className = 'history-card-domain';
+      domain.textContent = getDomain(item.url);
+
+      const dot = document.createElement('span');
+      dot.className = 'history-card-dot';
+
+      const timeText = document.createElement('span');
+      timeText.textContent = getRelativeTime(item.suspendedAt);
+
+      meta.appendChild(domain);
+      meta.appendChild(dot);
+      meta.appendChild(timeText);
+
+      info.appendChild(title);
+      info.appendChild(meta);
+
+      left.appendChild(favicon);
+      left.appendChild(info);
+
+      const right = document.createElement('div');
+      right.className = 'history-card-right';
+
+      // Restore button (opens the original tab)
+      const restoreLink = document.createElement('a');
+      restoreLink.className = 'history-restore-link';
+      restoreLink.textContent = 'Restore Tab';
+      restoreLink.title = `Click to restore ${item.url}`;
+      restoreLink.addEventListener('click', () => {
+        browserAPI.tabs.create({ url: item.url });
+      });
+
+      // Individual item delete button
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'history-card-delete';
+      deleteBtn.title = 'Remove this entry from log';
+      deleteBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+      `;
+
+      deleteBtn.addEventListener('click', async () => {
+        // Find index of matching item in full list
+        const realIndex = fullHistoryList.findIndex(h => h.id === item.id);
+        if (realIndex !== -1) {
+          fullHistoryList.splice(realIndex, 1);
+          await browserAPI.storage.local.set({ history: fullHistoryList });
+          renderHistory(fullHistoryList, historySearchInput.value);
+          showToast('Entry Removed from History');
+        }
+      });
+
+      right.appendChild(restoreLink);
+      right.appendChild(deleteBtn);
+
+      card.appendChild(left);
+      card.appendChild(right);
+
+      historyGrid.appendChild(card);
+    });
+  }
+
+  // Bind History Panel Triggers
+  function initHistoryBindings() {
+    // 1. Search filter input
+    historySearchInput.addEventListener('input', (e) => {
+      renderHistory(fullHistoryList, e.target.value);
+    });
+
+    // 2. Clear all history items
+    clearHistoryBtn.addEventListener('click', async () => {
+      if (fullHistoryList.length === 0) return;
+      
+      const confirmClear = confirm('Are you sure you want to clear your suspension history log? (This will not close or restore your active browser tabs)');
+      if (confirmClear) {
+        fullHistoryList = [];
+        await browserAPI.storage.local.set({ history: [] });
+        renderHistory([]);
+        showToast('History Log Cleared');
+      }
+    });
+
+    // 3. Export History Backup (data persistence safeguard)
+    exportHistoryBtn.addEventListener('click', () => {
+      if (fullHistoryList.length === 0) {
+        alert('Your history log is currently empty. There are no tabs to export.');
+        return;
+      }
+
+      try {
+        const timestamp = new Date().toLocaleString();
+        const ramMB = fullHistoryList.length * 120;
+        const ramStr = ramMB < 1024 ? `${ramMB} MB` : `${(ramMB / 1024).toFixed(1)} GB`;
+
+        let backupContent = `# Zen Tab Suspender Backup\n`;
+        backupContent += `Exported on: ${timestamp}\n`;
+        backupContent += `Total Suspended Tabs: ${fullHistoryList.length}\n`;
+        backupContent += `Estimated Memory Reclaimed: ${ramStr}\n\n`;
+        backupContent += `## Suspended Pages Index:\n`;
+
+        fullHistoryList.forEach((item, index) => {
+          const dateStr = new Date(item.suspendedAt).toLocaleString();
+          backupContent += `${index + 1}. [${item.title}](${item.url}) - Suspended on ${dateStr}\n`;
+        });
+
+        // Trigger local file download
+        const blob = new Blob([backupContent], { type: 'text/markdown;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // Dynamic file name
+        const cleanDate = new Date().toISOString().slice(0,10);
+        link.setAttribute('download', `zen_suspended_tabs_backup_${cleanDate}.md`);
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup DOM
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast('Backup File Downloaded!');
+      } catch (e) {
+        console.error('Failed to export suspension history:', e);
+        alert('An error occurred during the backup generation. Please try again.');
+      }
+    });
+  }
+
+  // Handle storage updates in real time
+  browserAPI.runtime.onMessage.addListener((message) => {
+    if (message.method === 'historyUpdated') {
+      fullHistoryList = message.history || [];
+      const currentTab = document.querySelector('.nav-item.active').getAttribute('data-tab');
+      if (currentTab === 'history') {
+        renderHistory(fullHistoryList, historySearchInput.value);
+      }
+    }
+  });
+
   // Initialization
   document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     loadSettings();
     initSettingsBindings();
     initWhitelistBindings();
+    initHistoryBindings();
   });
 })();

@@ -48,6 +48,13 @@
           </svg>
           Advanced
         </button>
+        <button class="nav-item" data-tab="history">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          Suspension History
+        </button>
       </nav>
     </aside>
 
@@ -73,19 +80,23 @@
             </label>
           </div>
 
-          <!-- Inactivity Timeout Selector -->
-          <div class="setting-card glass-panel">
-            <div class="setting-info">
-              <h3>Inactivity Timeout</h3>
-              <p>The duration a background tab must remain inactive before being suspended.</p>
+          <!-- Auto-Suspend Interval Range Bar -->
+          <div class="setting-card glass-panel flex-column">
+            <div class="setting-info margin-bottom">
+              <h3>Auto-Suspend Interval</h3>
+              <p>The duration a background tab must remain inactive before being suspended. Use arrows to fine-tune.</p>
             </div>
-            <div class="select-wrapper">
-              <select id="setting-timeout">
-                <option value="15">15 Minutes</option>
-                <option value="30">30 Minutes</option>
-                <option value="60">1 Hour</option>
-                <option value="120">2 Hours</option>
-              </select>
+            <div class="slider-wrapper">
+              <button id="slider-arrow-left" class="arrow-adjust-btn" title="Decrease duration by 5 minutes">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <div class="slider-track-container">
+                <input type="range" id="setting-timeout" min="5" max="300" step="5" value="30">
+                <span id="slider-timeout-value">30 Minutes</span>
+              </div>
+              <button id="slider-arrow-right" class="arrow-adjust-btn" title="Increase duration by 5 minutes">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
             </div>
           </div>
 
@@ -198,6 +209,83 @@
               <input type="checkbox" id="setting-auto-restore">
               <span class="slider round"></span>
             </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. SUSPENSION HISTORY TAB -->
+      <section id="tab-history" class="tab-panel">
+        <header class="panel-header header-with-actions">
+          <div>
+            <h2>Suspension History</h2>
+            <p>Review, search, or restore your suspended background tabs. History is stored locally with zero active memory consumption.</p>
+          </div>
+          <div class="header-actions-row">
+            <button id="export-history-btn" class="secondary-btn glow-border" title="Download backup of all suspended tabs">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Export Backup
+            </button>
+            <button id="clear-history-btn" class="danger-btn outline" title="Clear all history items">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Clear History
+            </button>
+          </div>
+        </header>
+
+        <!-- Widgets Area -->
+        <div class="history-widgets-grid margin-bottom">
+          <!-- RAM Saved stats widget -->
+          <div class="widget-card glass-panel widget-ram-saving">
+            <div class="widget-icon-box">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+              </svg>
+            </div>
+            <div class="widget-meta">
+              <span class="widget-label">Estimated RAM Reclaimed</span>
+              <h3 id="history-ram-saved" class="widget-value text-glowing">0.0 MB</h3>
+              <p class="widget-desc">Averaging 120MB per suspended background page</p>
+            </div>
+          </div>
+
+          <!-- Total Suspended tabs widget -->
+          <div class="widget-card glass-panel">
+            <div class="widget-icon-box blue">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+              </svg>
+            </div>
+            <div class="widget-meta">
+              <span class="widget-label">Total Tabs Hibernated</span>
+              <h3 id="history-total-suspended" class="widget-value">0</h3>
+              <p class="widget-desc">Active items recorded in current history</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Bar wrapper -->
+        <div class="history-search-row glass-panel">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="history-search-input" placeholder="Search suspended tab titles or domain URLs...">
+          </div>
+        </div>
+
+        <!-- Dynamic History Grid -->
+        <div class="history-list-section margin-top">
+          <div id="suspended-history-grid" class="history-grid">
+            <!-- Dynamic History Cards injected here by JS -->
           </div>
         </div>
       </section>

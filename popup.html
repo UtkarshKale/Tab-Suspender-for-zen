@@ -33,30 +33,58 @@
 
     <!-- Main Card Body -->
     <main class="main-content">
-      <!-- Master Control Toggle Option -->
-      <div class="control-row glass-panel">
-        <div class="label-desc">
-          <span class="control-title">Auto-Suspend Tabs</span>
-          <span class="control-desc">Suspends inactive background tabs</span>
+      <!-- Premium Power Button (Enable/Disable circular switch) -->
+      <div class="power-container glass-panel">
+        <button id="master-power-btn" class="power-btn active" title="Toggle Auto-Suspension">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="power-icon">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+            <line x1="12" y1="2" x2="12" y2="12"></line>
+          </svg>
+          <span class="power-glow"></span>
+        </button>
+        <div class="power-meta">
+          <span id="power-status-title" class="status-label">Auto-Suspend Enabled</span>
+          <span id="power-status-desc" class="status-desc">Protecting your active browser RAM</span>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="master-toggle" checked>
-          <span class="slider round"></span>
-        </label>
       </div>
 
-      <!-- Quick Settings Selectors -->
-      <div class="settings-grid">
-        <div class="control-box glass-panel">
-          <span class="box-title">Idle Timeout</span>
-          <div class="select-wrapper">
-            <select id="timeout-select">
-              <option value="15">15 Minutes</option>
-              <option value="30">30 Minutes</option>
-              <option value="60">1 Hour</option>
-              <option value="120">2 Hours</option>
-            </select>
+      <!-- Live Pause Countdown Screen (Dynamically toggled via JS) -->
+      <div id="pause-countdown-panel" class="pause-countdown-card glass-panel" style="display: none;">
+        <div class="countdown-meta">
+          <span class="countdown-label">TEMPORARY PAUSE ACTIVE</span>
+          <h2 id="countdown-timer">00:00:00</h2>
+        </div>
+        <button id="resume-countdown-btn" class="resume-now-btn">
+          <span>Resume Auto-Suspend</span>
+          <span class="btn-glow-cyan"></span>
+        </button>
+      </div>
+
+      <!-- Quick Pause Pills Grid -->
+      <div id="quick-pause-grid" class="pause-pills-row glass-panel">
+        <span class="section-micro-label">Quick Pause Auto-Suspension:</span>
+        <div class="pills-container">
+          <button class="pause-pill-btn" data-pause="10">10m</button>
+          <button class="pause-pill-btn" data-pause="60">1h</button>
+          <button class="pause-pill-btn" data-pause="300">5h</button>
+          <button class="pause-pill-btn" data-pause="1440">24h</button>
+        </div>
+      </div>
+
+      <!-- Auto-Suspend Interval Adjustment Slider (above idle timeout) -->
+      <div class="slider-box glass-panel">
+        <span class="slider-box-label">Idle Inactivity Interval</span>
+        <div class="popup-slider-wrapper">
+          <button id="popup-slider-left" class="arrow-adjust" title="Decrease timeout">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <div class="popup-slider-center">
+            <input type="range" id="timeout-slider" min="5" max="300" step="5" value="30">
+            <span id="timeout-slider-display">30 Minutes</span>
           </div>
+          <button id="popup-slider-right" class="arrow-adjust" title="Increase timeout">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
         </div>
       </div>
 

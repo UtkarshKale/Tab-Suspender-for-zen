@@ -4,11 +4,27 @@
 (function() {
   const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
 
-  // UI Elements
-  const masterToggle = document.getElementById('master-toggle');
-  const timeoutSelect = document.getElementById('timeout-select');
+  // Master Power Elements
+  const masterPowerBtn = document.getElementById('master-power-btn');
+  const powerStatusTitle = document.getElementById('power-status-title');
+  const powerStatusDesc = document.getElementById('power-status-desc');
+  
+  // Header Indicator Elements
   const statusDot = document.querySelector('.status-dot');
   const statusText = document.getElementById('status-text');
+
+  // Slider Elements
+  const timeoutSlider = document.getElementById('timeout-slider');
+  const timeoutSliderDisplay = document.getElementById('timeout-slider-display');
+  const popupSliderLeft = document.getElementById('popup-slider-left');
+  const popupSliderRight = document.getElementById('popup-slider-right');
+
+  // Pause elements
+  const pauseCountdownPanel = document.getElementById('pause-countdown-panel');
+  const countdownTimerText = document.getElementById('countdown-timer');
+  const resumeCountdownBtn = document.getElementById('resume-countdown-btn');
+  const quickPauseGrid = document.getElementById('quick-pause-grid');
+  const pausePillBtns = document.querySelectorAll('.pause-pill-btn');
   
   // Action Buttons
   const suspendActiveBtn = document.getElementById('suspend-active-btn');
@@ -17,33 +33,114 @@
   const whitelistBtn = document.getElementById('whitelist-btn');
   const settingsBtn = document.getElementById('settings-btn');
 
-  // Load and apply current settings
-  async function loadSettings() {
-    const result = await browserAPI.storage.local.get('settings');
-    const settings = result.settings || { active: true, timeout: 30 };
-    
-    // Update master toggle state
-    masterToggle.checked = settings.active;
-    
-    // Update timeout selector
-    timeoutSelect.value = settings.timeout;
-    
-    // Update visual status header
-    updateStatusVisuals(settings.active);
+  // Timer intervals
+  let countdownInterval = null;
+
+  // Helper to format remaining milliseconds to HH:MM:SS
+  function formatTimeRemaining(ms) {
+    if (ms <= 0) return '00:00:00';
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const pad = (num) => String(num).padStart(2, '0');
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   }
 
-  // Update Status visuals
-  function updateStatusVisuals(isActive) {
-    if (isActive) {
-      statusDot.className = 'status-dot active';
-      statusText.textContent = 'Active';
+  // Update Inactivity display text
+  function updateSliderDisplay(val) {
+    const minutes = parseInt(val);
+    if (minutes < 60) {
+      timeoutSliderDisplay.textContent = `${minutes} Minutes`;
     } else {
-      statusDot.className = 'status-dot paused';
-      statusText.textContent = 'Paused';
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      if (remainingMinutes === 0) {
+        timeoutSliderDisplay.textContent = `${hours} Hour${hours > 1 ? 's' : ''}`;
+      } else {
+        timeoutSliderDisplay.textContent = `${hours} Hour${hours > 1 ? 's' : ''} ${remainingMinutes} Mins`;
+      }
     }
   }
 
-  // Save modified settings
+  // Manage dynamic countdown for active temporary pauses
+  function runPauseCountdown(pausedUntilTime) {
+    clearInterval(countdownInterval);
+
+    const updateTimer = () => {
+      const remainingMs = pausedUntilTime - Date.now();
+      
+      if (remainingMs <= 0) {
+        clearInterval(countdownInterval);
+        saveSettings({ pausedUntil: 0 }).then(() => {
+          loadSettings();
+        });
+        return;
+      }
+
+      countdownTimerText.textContent = formatTimeRemaining(remainingMs);
+    };
+
+    updateTimer();
+    countdownInterval = setInterval(updateTimer, 1000);
+  }
+
+  // Load and apply settings
+  async function loadSettings() {
+    clearInterval(countdownInterval);
+    
+    const result = await browserAPI.storage.local.get('settings');
+    const settings = result.settings || { active: true, timeout: 30, pausedUntil: 0 };
+    
+    const isActive = settings.active;
+    const pausedUntil = settings.pausedUntil || 0;
+    const now = Date.now();
+    const isCurrentlyPaused = pausedUntil > now;
+
+    // 1. Sync Power Button states
+    if (isActive) {
+      masterPowerBtn.className = 'power-btn active';
+      powerStatusTitle.textContent = 'Auto-Suspend Enabled';
+      powerStatusDesc.textContent = 'Protecting your active browser RAM';
+      
+      // Update header indicator
+      if (isCurrentlyPaused) {
+        statusDot.className = 'status-dot paused';
+        statusText.textContent = 'Paused';
+        
+        // Show Countdown view, hide Pills view
+        pauseCountdownPanel.style.display = 'flex';
+        quickPauseGrid.style.display = 'none';
+        runPauseCountdown(pausedUntil);
+      } else {
+        statusDot.className = 'status-dot active';
+        statusText.textContent = 'Active';
+        
+        // Hide Countdown view, show Pills view
+        pauseCountdownPanel.style.display = 'none';
+        quickPauseGrid.style.display = 'flex';
+      }
+    } else {
+      masterPowerBtn.className = 'power-btn disabled';
+      powerStatusTitle.textContent = 'Auto-Suspend Disabled';
+      powerStatusDesc.textContent = 'Auto-suspension is currently turned off';
+      
+      // Update header indicator
+      statusDot.className = 'status-dot paused';
+      statusText.textContent = 'Paused';
+      
+      // Hide both Pause sections if disabled
+      pauseCountdownPanel.style.display = 'none';
+      quickPauseGrid.style.display = 'none';
+    }
+
+    // 2. Sync Slider states
+    timeoutSlider.value = settings.timeout || 30;
+    updateSliderDisplay(timeoutSlider.value);
+  }
+
+  // Save Settings
   async function saveSettings(updates) {
     const result = await browserAPI.storage.local.get('settings');
     const settings = result.settings || {};
@@ -55,25 +152,70 @@
     browserAPI.runtime.sendMessage({ method: 'settingsChanged', settings: updatedSettings }).catch(console.error);
   }
 
-  // Set up UI Event Listeners
+  // Bind Event UI Interactions
   function initEvents() {
-    // 1. Toggle master switch
-    masterToggle.addEventListener('change', (e) => {
-      const active = e.target.checked;
-      updateStatusVisuals(active);
-      saveSettings({ active });
+    // 1. Power switch toggling
+    masterPowerBtn.addEventListener('click', async () => {
+      const result = await browserAPI.storage.local.get('settings');
+      const settings = result.settings || {};
+      const active = !settings.active;
+      
+      // Toggle off active state resets any active temporary pauses
+      await saveSettings({ active, pausedUntil: 0 });
+      loadSettings();
     });
 
-    // 2. Select inactivity timeout
-    timeoutSelect.addEventListener('change', (e) => {
-      const timeout = parseInt(e.target.value);
-      saveSettings({ timeout });
+    // 2. Slider drag triggers
+    timeoutSlider.addEventListener('input', (e) => {
+      updateSliderDisplay(e.target.value);
     });
 
-    // 3. Suspend Current Tab
+    timeoutSlider.addEventListener('change', (e) => {
+      saveSettings({ timeout: parseInt(e.target.value) });
+    });
+
+    // Slider chevrons buttons click
+    popupSliderLeft.addEventListener('click', () => {
+      let val = parseInt(timeoutSlider.value) - 5;
+      if (val < 5) val = 5;
+      timeoutSlider.value = val;
+      updateSliderDisplay(val);
+      saveSettings({ timeout: val });
+    });
+
+    popupSliderRight.addEventListener('click', () => {
+      let val = parseInt(timeoutSlider.value) + 5;
+      if (val > 300) val = 300;
+      timeoutSlider.value = val;
+      updateSliderDisplay(val);
+      saveSettings({ timeout: val });
+    });
+
+    // 3. Temporary Pause Quick Pills
+    pausePillBtns.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const pauseMinutes = parseInt(btn.getAttribute('data-pause'));
+        const futureTimestamp = Date.now() + pauseMinutes * 60 * 1000;
+        
+        // Enabling temporary pause automatically ensures extension auto-suspend is enabled
+        await saveSettings({ active: true, pausedUntil: futureTimestamp });
+        loadSettings();
+      });
+    });
+
+    // 4. Resume Button override
+    resumeCountdownBtn.addEventListener('click', async () => {
+      await saveSettings({ pausedUntil: 0 });
+      loadSettings();
+    });
+
+    // 5. Suspend Current Tab
     suspendActiveBtn.addEventListener('click', async () => {
       const [currentTab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
       if (currentTab && !currentTab.url.startsWith('about:') && !currentTab.url.startsWith('moz-extension:')) {
+        // Log tab in history
+        await browserAPI.runtime.sendMessage({ method: 'manualSuspend', tab: currentTab }).catch(console.error);
+
         const parkUrl = browserAPI.runtime.getURL(
           `park.html?url=${encodeURIComponent(currentTab.url)}&title=${encodeURIComponent(currentTab.title || '')}&favIconUrl=${encodeURIComponent(currentTab.favIconUrl || '')}`
         );
@@ -82,23 +224,22 @@
       }
     });
 
-    // 4. Suspend Other Tabs
+    // 6. Suspend Other Tabs
     suspendOthersBtn.addEventListener('click', async () => {
-      const [currentTab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
       const otherTabs = await browserAPI.tabs.query({ active: false, currentWindow: true });
-      
       const result = await browserAPI.storage.local.get('settings');
       const settings = result.settings || {};
       
-      // Notify background to run checks on each background tab immediately
       for (const tab of otherTabs) {
-        // Exclude internal/browser pages
         if (tab.url.startsWith('about:') || tab.url.startsWith('moz-extension:')) continue;
         
-        // Skip audio, whitelisted, or pinned depending on settings
+        // Exclude pinned or playing audio depending on options
         if (settings.preventPinned && tab.pinned) continue;
         if (settings.preventAudio && tab.audible) continue;
         
+        // Log manual suspension to history
+        await browserAPI.runtime.sendMessage({ method: 'manualSuspend', tab: tab }).catch(console.error);
+
         const parkUrl = browserAPI.runtime.getURL(
           `park.html?url=${encodeURIComponent(tab.url)}&title=${encodeURIComponent(tab.title || '')}&favIconUrl=${encodeURIComponent(tab.favIconUrl || '')}`
         );
@@ -112,7 +253,7 @@
       window.close();
     });
 
-    // 5. Unsuspend All Tabs in Current Window
+    // 7. Unsuspend All Tabs in Current Window
     unsuspendAllBtn.addEventListener('click', async () => {
       const tabs = await browserAPI.tabs.query({ currentWindow: true });
       for (const tab of tabs) {
@@ -131,7 +272,7 @@
       window.close();
     });
 
-    // 6. Whitelist Current Domain
+    // 8. Whitelist Current Domain
     whitelistBtn.addEventListener('click', async () => {
       const [currentTab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
       if (currentTab && currentTab.url && !currentTab.url.startsWith('about:') && !currentTab.url.startsWith('moz-extension:')) {
@@ -147,7 +288,6 @@
             whitelist.push(domainPattern);
             await saveSettings({ whitelist });
             
-            // Temporary UI feedback
             whitelistBtn.textContent = 'Whitelisted!';
             whitelistBtn.style.borderColor = '#10b981';
             whitelistBtn.style.color = '#10b981';
@@ -166,14 +306,14 @@
       }
     });
 
-    // 7. Open Dashboard Options
+    // 9. Open Dashboard settings
     settingsBtn.addEventListener('click', () => {
       browserAPI.tabs.create({ url: browserAPI.runtime.getURL('options.html') });
       window.close();
     });
   }
 
-  // Initialize
+  // Initial load
   document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     initEvents();
