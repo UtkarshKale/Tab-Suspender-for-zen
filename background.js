@@ -65,8 +65,44 @@ function isWhitelisted(url, whitelist) {
   }
 }
 
+// Smart fallback estimator in background script based on domain category
+function calculateFallbackMemory(url) {
+  if (!url) return 85 * 1024 * 1024; // 85MB default
+  try {
+    const urlLower = url.toLowerCase();
+    
+    // Heavy Web Apps, Video, Audio, Collaboration tools (~350MB)
+    const heavyPatterns = [
+      'youtube.com', 'netflix.com', 'twitch.tv', 'spotify.com',
+      'mail.google.com', 'outlook.live.com', 'figma.com', 'canva.com',
+      'trello.com', 'slack.com', 'teams.microsoft.com', 'docs.google.com',
+      'sheets.google.com', 'maps.google.com', 'github.com'
+    ];
+    
+    const isHeavy = heavyPatterns.some(pattern => urlLower.includes(pattern));
+    if (isHeavy) {
+      return 350 * 1024 * 1024; // 350MB
+    }
+    
+    // Medium-weight news/social networks (~180MB)
+    const mediumPatterns = [
+      'facebook.com', 'instagram.com', 'twitter.com', 'x.com',
+      'reddit.com', 'linkedin.com', 'amazon.com', 'nytimes.com', 'cnn.com'
+    ];
+    const isMedium = mediumPatterns.some(pattern => urlLower.includes(pattern));
+    if (isMedium) {
+      return 180 * 1024 * 1024; // 180MB
+    }
+    
+    // Standard static page (~85MB)
+    return 85 * 1024 * 1024;
+  } catch (e) {
+    return 85 * 1024 * 1024;
+  }
+}
+
 // Add a tab to suspension history
-async function addToHistory(tab) {
+async function addToHistory(tab, memoryBytes = 0) {
   try {
     const result = await browserAPI.storage.local.get('history');
     const history = result.history || [];
@@ -77,7 +113,8 @@ async function addToHistory(tab) {
       url: tab.url,
       title: tab.title || 'Suspended Tab',
       favIconUrl: tab.favIconUrl || '',
-      suspendedAt: Date.now()
+      suspendedAt: Date.now(),
+      memoryReclaimedBytes: memoryBytes || calculateFallbackMemory(tab.url)
     };
     
     // Add to top of list
@@ -133,11 +170,28 @@ async function checkAndSuspendTab(tab, settings) {
     return;
   }
   
+  // Query content script for exact RAM diagnostics with a strict 400ms timeout
+  let memoryBytes = 0;
+  try {
+    const response = await Promise.race([
+      browserAPI.tabs.sendMessage(tab.id, { method: 'getMemoryEstimation' }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 400))
+    ]);
+    if (response && response.memoryBytes) {
+      memoryBytes = response.memoryBytes;
+      console.log(`Precise diagnostics for tab ${tab.id}: ${(memoryBytes / (1024 * 1024)).toFixed(1)} MB`);
+    }
+  } catch (e) {
+    // Fallback if communication fails or times out
+    memoryBytes = calculateFallbackMemory(tab.url);
+    console.log(`Diagnostics fallback for tab ${tab.id}: ${(memoryBytes / (1024 * 1024)).toFixed(1)} MB`);
+  }
+
   // Perform suspension
   console.log(`Suspending tab ${tab.id}: ${tab.title} (${tab.url})`);
   
   // Add to suspension history
-  await addToHistory(tab);
+  await addToHistory(tab, memoryBytes);
   
   if (settings.mode === 'silent') {
     // Native Silent mode - discard the tab directly
@@ -215,7 +269,20 @@ browserAPI.contextMenus.onClicked.addListener(async (info, tab) => {
       // Temporarily bypass active status constraint for manual request
       await browserAPI.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         // Suspending current tab requires visual mode, otherwise native discard will unload active tab (not standard)
-        await addToHistory(tab);
+        let memoryBytes = 0;
+        try {
+          const response = await Promise.race([
+            browserAPI.tabs.sendMessage(tab.id, { method: 'getMemoryEstimation' }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 400))
+          ]);
+          if (response && response.memoryBytes) {
+            memoryBytes = response.memoryBytes;
+          }
+        } catch (e) {
+          memoryBytes = calculateFallbackMemory(tab.url);
+        }
+        await addToHistory(tab, memoryBytes);
+        
         const parkUrl = browserAPI.runtime.getURL(
           `park.html?url=${encodeURIComponent(tab.url)}&title=${encodeURIComponent(tab.title || '')}&favIconUrl=${encodeURIComponent(tab.favIconUrl || '')}`
         );
@@ -282,7 +349,22 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   else if (message.method === 'manualSuspend') {
     if (message.tab) {
-      addToHistory(message.tab);
+      // Query the tab for exact RAM metrics (since the tab is still alive and responsive)
+      (async () => {
+        let memoryBytes = 0;
+        try {
+          const response = await Promise.race([
+            browserAPI.tabs.sendMessage(message.tab.id, { method: 'getMemoryEstimation' }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 400))
+          ]);
+          if (response && response.memoryBytes) {
+            memoryBytes = response.memoryBytes;
+          }
+        } catch (e) {
+          memoryBytes = calculateFallbackMemory(message.tab.url);
+        }
+        await addToHistory(message.tab, memoryBytes);
+      })();
     }
   }
   else if (message.method === 'unsuspendTab') {

@@ -69,6 +69,28 @@
         });
       });
     });
+
+    // Check if redirecting from popup history link via URL search param
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetTab = urlParams.get('tab');
+    if (targetTab === 'history') {
+      const historyNavItem = document.querySelector('.nav-item[data-tab="history"]');
+      if (historyNavItem) {
+        // Toggle nav items active class
+        navItems.forEach(nav => nav.classList.remove('active'));
+        historyNavItem.classList.add('active');
+
+        // Toggle panel active class
+        tabPanels.forEach(panel => {
+          if (panel.id === 'tab-history') {
+            panel.classList.add('active');
+            loadHistory();
+          } else {
+            panel.classList.remove('active');
+          }
+        });
+      }
+    }
   }
 
   // Show sliding notification toast
@@ -316,8 +338,13 @@
     // Update Widgets Dashboard
     totalSuspendedEl.textContent = historyData.length;
     
-    // Sum estimated saved RAM (realistic baseline: 120MB per suspended tab)
-    const ramMB = historyData.length * 120;
+    // Sum estimated saved RAM based on precise profiling metrics
+    let totalSavedBytes = 0;
+    historyData.forEach(item => {
+      totalSavedBytes += item.memoryReclaimedBytes || (85 * 1024 * 1024); // Fallback to 85MB
+    });
+
+    const ramMB = Math.floor(totalSavedBytes / (1024 * 1024));
     if (ramMB < 1024) {
       ramSavedEl.textContent = `${ramMB} MB`;
     } else {
@@ -387,6 +414,14 @@
       const right = document.createElement('div');
       right.className = 'history-card-right';
 
+      // Memory Reclamation Badge (specific to this tab)
+      const reclaimedBytes = item.memoryReclaimedBytes || (85 * 1024 * 1024);
+      const reclaimedMB = Math.floor(reclaimedBytes / (1024 * 1024));
+      
+      const memoryBadge = document.createElement('span');
+      memoryBadge.className = 'history-card-ram-badge';
+      memoryBadge.textContent = `${reclaimedMB} MB Saved`;
+
       // Restore button (opens the original tab)
       const restoreLink = document.createElement('a');
       restoreLink.className = 'history-restore-link';
@@ -418,6 +453,7 @@
         }
       });
 
+      right.appendChild(memoryBadge);
       right.appendChild(restoreLink);
       right.appendChild(deleteBtn);
 
@@ -457,7 +493,11 @@
 
       try {
         const timestamp = new Date().toLocaleString();
-        const ramMB = fullHistoryList.length * 120;
+        let totalSavedBytes = 0;
+        fullHistoryList.forEach(item => {
+          totalSavedBytes += item.memoryReclaimedBytes || (85 * 1024 * 1024);
+        });
+        const ramMB = Math.floor(totalSavedBytes / (1024 * 1024));
         const ramStr = ramMB < 1024 ? `${ramMB} MB` : `${(ramMB / 1024).toFixed(1)} GB`;
 
         let backupContent = `# Zen Tab Suspender Backup\n`;
@@ -468,7 +508,9 @@
 
         fullHistoryList.forEach((item, index) => {
           const dateStr = new Date(item.suspendedAt).toLocaleString();
-          backupContent += `${index + 1}. [${item.title}](${item.url}) - Suspended on ${dateStr}\n`;
+          const bytes = item.memoryReclaimedBytes || (85 * 1024 * 1024);
+          const mb = Math.floor(bytes / (1024 * 1024));
+          backupContent += `${index + 1}. [${item.title}](${item.url}) - ${mb}MB saved - Suspended on ${dateStr}\n`;
         });
 
         // Trigger local file download
