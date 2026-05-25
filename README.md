@@ -26,12 +26,12 @@ Type **`about:debugging`** in your Zen Browser or Firefox address bar and press 
 
 ---
 
-## 👨‍💻 Developer & Support
+## aBout me 🌻
 
 This project was built and designed by **Utkarsh Kale** creds to Sergey Drpa for inspo.
 
-*   **Instagram**: you can follow me at [**@cavemannath**](https://www.instagram.com/cavemannath/)
-*   **PayPal**: If you like the extension, find it useful, and want to support future upgrades or buy me a coffee, supporting at [**paypal.me/NathKale**](https://paypal.me/NathKale) will be massive!
+*   **Instagram**: you can follow me at [**@cavemannath**](https://www.instagram.com/cavemannath/) we chillin there
+*   **PayPal**: also If you like the extension or find it useful, and want to support future upgrades supporting at [**paypal.me/NathKale**](https://paypal.me/NathKale) will be massive 🗣️
 
 ---
 
