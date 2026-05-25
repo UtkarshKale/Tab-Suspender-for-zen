@@ -72,8 +72,8 @@ Type **`about:debugging`** in your Zen Browser or Firefox address bar and press 
 
 This project was built and designed by **Utkarsh Kale**.
 
-*   **Instagram**: Follow my development channel at [**@cavemannath**](https://www.instagram.com/cavemannath/)
-*   **PayPal**: If you enjoy the extension, find it useful, and want to support future upgrades or buy me a coffee, supporting at [**paypal.me/NathKale**](https://paypal.me/NathKale) will be massive!
+*   **Instagram**: you can follow me at [**@cavemannath**](https://www.instagram.com/cavemannath/)
+*   **PayPal**: If you like the extension, find it useful, and want to support future upgrades or buy me a coffee, supporting at [**paypal.me/NathKale**](https://paypal.me/NathKale) will be massive!
 
 ---
 
