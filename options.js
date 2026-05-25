@@ -222,11 +222,17 @@
     whitelistList.innerHTML = '';
     
     if (whitelist.length === 0) {
-      whitelistList.innerHTML = `
-        <div class="setting-info" style="grid-column: 1 / -1; text-align: center; padding: 20px; opacity: 0.5;">
-          <p>No whitelisted domains yet. Add domains above to protect them.</p>
-        </div>
-      `;
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'setting-info';
+      emptyDiv.style.gridColumn = '1 / -1';
+      emptyDiv.style.textAlign = 'center';
+      emptyDiv.style.padding = '20px';
+      emptyDiv.style.opacity = '0.5';
+      
+      const p = document.createElement('p');
+      p.textContent = 'No whitelisted domains yet. Add domains above to protect them.';
+      emptyDiv.appendChild(p);
+      whitelistList.appendChild(emptyDiv);
       return;
     }
 
@@ -353,11 +359,16 @@
     }
 
     if (filteredData.length === 0) {
-      historyGrid.innerHTML = `
-        <div class="setting-info" style="text-align: center; padding: 40px; opacity: 0.5;">
-          <p>${filterQuery ? 'No history entries match your search.' : 'Your suspension history is empty. Inactive tabs will populate here once suspended.'}</p>
-        </div>
-      `;
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'setting-info';
+      emptyDiv.style.textAlign = 'center';
+      emptyDiv.style.padding = '40px';
+      emptyDiv.style.opacity = '0.5';
+      
+      const p = document.createElement('p');
+      p.textContent = filterQuery ? 'No history entries match your search.' : 'Your suspension history is empty. Inactive tabs will populate here once suspended.';
+      emptyDiv.appendChild(p);
+      historyGrid.appendChild(emptyDiv);
       return;
     }
 
