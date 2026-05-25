@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "Zen Tab Suspender",
+  "version": "1.0.0",
+  "description": "Automatically suspends inactive tabs to save up to 80% memory. Designed specifically for Zen Browser and Firefox.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "tabs",
+    "storage",
+    "alarms",
+    "contextMenus",
+    "activeTab"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "action": {
+    "default_icon": "icons/icon48.png",
+    "default_title": "Zen Tab Suspender",
+    "default_popup": "popup.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "park.html",
+        "park.js",
+        "park.css",
+        "icons/*.png"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "zen-tab-suspender@zen-browser.com",
+      "strict_min_version": "109.0"
+    }
+  }
+}

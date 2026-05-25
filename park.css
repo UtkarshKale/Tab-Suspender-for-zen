@@ -1,0 +1,259 @@
+/* Zen Tab Suspender - Parked Page Styles */
+:root {
+  --bg-color: #080a10;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent-indigo: #6366f1;
+  --accent-blue: #3b82f6;
+  --card-bg: rgba(15, 18, 29, 0.55);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --shadow-glow: rgba(99, 102, 241, 0.25);
+  --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/* Pulsating glowing background radial circles */
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.45;
+  transition: all 4s ease-in-out;
+}
+
+.bg-glow-1 {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--accent-indigo) 0%, rgba(99, 102, 241, 0) 70%);
+  top: -10%;
+  left: -10%;
+  animation: floatGlow1 20s infinite alternate;
+}
+
+.bg-glow-2 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, var(--accent-blue) 0%, rgba(59, 82, 246, 0) 70%);
+  bottom: -10%;
+  right: -10%;
+  animation: floatGlow2 18s infinite alternate;
+}
+
+@keyframes floatGlow1 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(100px, 80px) scale(1.15); }
+}
+
+@keyframes floatGlow2 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-80px, -120px) scale(1.2); }
+}
+
+/* Core glassmorphic card container */
+.container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 460px;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.park-card {
+  width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 28px;
+  padding: 40px 32px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), 
+              0 0 40px rgba(99, 102, 241, 0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.5s ease;
+}
+
+.park-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5), 
+              0 0 50px rgba(99, 102, 241, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Favicon Frame with breathing glow */
+.favicon-container {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 28px;
+  box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.04);
+}
+
+#favicon {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  opacity: 0.65; /* opacity change denotes hibernating state */
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.park-card:hover #favicon {
+  opacity: 0.9;
+  transform: scale(1.08);
+}
+
+/* Pulse Ring representing hibernating heartbeat */
+.pulse-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  animation: pulse 3s infinite cubic-bezier(0.215, 0.610, 0.355, 1);
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+/* Text Content Details */
+.text-content {
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+#title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+}
+
+#domain {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  word-break: break-all;
+}
+
+.divider {
+  width: 60px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin-bottom: 28px;
+}
+
+/* Premium gradient action button */
+#restore-btn {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  height: 52px;
+  background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-blue) 100%);
+  border: none;
+  border-radius: 16px;
+  color: #ffffff;
+  font-family: var(--font-family);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+#restore-btn:hover {
+  transform: scale(1.03) translateY(-1px);
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.45);
+}
+
+#restore-btn:active {
+  transform: scale(0.98) translateY(0);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
+}
+
+/* Internal glass layer for premium lighting */
+.btn-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0));
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.footer-tip {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.25);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+kbd {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.4);
+}

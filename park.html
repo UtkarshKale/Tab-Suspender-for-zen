@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tab Suspended | Zen</title>
+  <link rel="stylesheet" href="park.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Shifting glowing background gradients -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div class="container">
+    <div class="park-card">
+      <div class="favicon-container">
+        <img id="favicon" src="icons/icon128.png" alt="Favicon">
+        <div class="pulse-ring"></div>
+      </div>
+      
+      <div class="text-content">
+        <h1 id="title">Tab Suspended</h1>
+        <p id="domain">domain.com</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <button id="restore-btn">
+        <span class="btn-text">Restore Tab</span>
+        <span class="btn-glow"></span>
+      </button>
+
+      <div class="footer-tip">
+        Click anywhere on the screen or press <kbd>Space</kbd> to restore
+      </div>
+    </div>
+  </div>
+
+  <script src="park.js"></script>
+</body>
+</html>

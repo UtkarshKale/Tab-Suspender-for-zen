@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen Tab Suspender</title>
+  <link rel="stylesheet" href="popup.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-area">
+        <img class="logo" src="icons/icon32.png" alt="Logo">
+        <div class="title-sub">
+          <h1>Zen Suspender</h1>
+          <div class="status-indicator">
+            <span class="status-dot active"></span>
+            <span id="status-text">Active</span>
+          </div>
+        </div>
+      </div>
+      <button id="settings-btn" title="Open Settings Dashboard">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Main Card Body -->
+    <main class="main-content">
+      <!-- Master Control Toggle Option -->
+      <div class="control-row glass-panel">
+        <div class="label-desc">
+          <span class="control-title">Auto-Suspend Tabs</span>
+          <span class="control-desc">Suspends inactive background tabs</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="master-toggle" checked>
+          <span class="slider round"></span>
+        </label>
+      </div>
+
+      <!-- Quick Settings Selectors -->
+      <div class="settings-grid">
+        <div class="control-box glass-panel">
+          <span class="box-title">Idle Timeout</span>
+          <div class="select-wrapper">
+            <select id="timeout-select">
+              <option value="15">15 Minutes</option>
+              <option value="30">30 Minutes</option>
+              <option value="60">1 Hour</option>
+              <option value="120">2 Hours</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Button Grid -->
+      <div class="actions-area">
+        <button id="suspend-active-btn" class="action-btn primary-action">
+          <span>Suspend Current Tab</span>
+        </button>
+
+        <div class="action-btn-row">
+          <button id="suspend-others-btn" class="action-btn secondary-action" title="Suspend all other tabs in this window">
+            <span>Suspend Others</span>
+          </button>
+          <button id="unsuspend-all-btn" class="action-btn secondary-action" title="Unsuspend all suspended tabs">
+            <span>Unsuspend All</span>
+          </button>
+        </div>
+
+        <button id="whitelist-btn" class="action-btn outline-action">
+          <span>Never Suspend This Site</span>
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

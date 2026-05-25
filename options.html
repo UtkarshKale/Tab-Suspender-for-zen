@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zen Tab Suspender Settings</title>
+  <link rel="stylesheet" href="options.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Ambient background glow layers -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar glass-panel">
+      <div class="brand">
+        <img class="brand-logo" src="icons/icon48.png" alt="Logo">
+        <div class="brand-text">
+          <h2>Zen Suspender</h2>
+          <span>Dashboard v1.0.0</span>
+        </div>
+      </div>
+      
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="general">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9"></rect>
+            <rect x="14" y="3" width="7" height="5"></rect>
+            <rect x="14" y="12" width="7" height="9"></rect>
+            <rect x="3" y="16" width="7" height="5"></rect>
+          </svg>
+          General Settings
+        </button>
+        <button class="nav-item" data-tab="whitelist">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          Domain Whitelist
+        </button>
+        <button class="nav-item" data-tab="advanced">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          Advanced
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Main Settings Panel Area -->
+    <main class="content-area">
+      <!-- 1. GENERAL TAB -->
+      <section id="tab-general" class="tab-panel active">
+        <header class="panel-header">
+          <h2>General Settings</h2>
+          <p>Configure how and when your inactive background tabs are suspended.</p>
+        </header>
+
+        <div class="settings-stack">
+          <!-- Auto Suspend Active Master Switch -->
+          <div class="setting-card glass-panel">
+            <div class="setting-info">
+              <h3>Auto-Suspend Inactive Tabs</h3>
+              <p>Turn on automatic suspension of inactive tabs after a period of idle time.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-active">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <!-- Inactivity Timeout Selector -->
+          <div class="setting-card glass-panel">
+            <div class="setting-info">
+              <h3>Inactivity Timeout</h3>
+              <p>The duration a background tab must remain inactive before being suspended.</p>
+            </div>
+            <div class="select-wrapper">
+              <select id="setting-timeout">
+                <option value="15">15 Minutes</option>
+                <option value="30">30 Minutes</option>
+                <option value="60">1 Hour</option>
+                <option value="120">2 Hours</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Suspension Mode Options -->
+          <div class="setting-card glass-panel flex-column">
+            <div class="setting-info margin-bottom">
+              <h3>Suspension Mode</h3>
+              <p>Choose the interface type and behavior for suspended tabs.</p>
+            </div>
+            <div class="mode-grid">
+              <label class="mode-option">
+                <input type="radio" name="setting-mode" value="visual" checked>
+                <div class="mode-card">
+                  <div class="radio-circle"></div>
+                  <div class="mode-desc">
+                    <h4>Visual Hibernation</h4>
+                    <p>Redirects tabs to a custom parked screen displaying the page title and favicon. Click or hover to restore.</p>
+                  </div>
+                </div>
+              </label>
+              <label class="mode-option">
+                <input type="radio" name="setting-mode" value="silent">
+                <div class="mode-card">
+                  <div class="radio-circle"></div>
+                  <div class="mode-desc">
+                    <h4>Silent Unloading</h4>
+                    <p>Silently unloads pages natively without changing the URL. Auto-reloads instantly when clicked.</p>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. WHITELIST TAB -->
+      <section id="tab-whitelist" class="tab-panel">
+        <header class="panel-header">
+          <h2>Domain Whitelist</h2>
+          <p>Whitelist sites that should never be suspended (e.g. dashboards, email servers, communication portals).</p>
+        </header>
+
+        <div class="whitelist-manager glass-panel">
+          <div class="add-whitelist-row">
+            <input type="text" id="whitelist-input" placeholder="e.g. slack.com, *trello.com*">
+            <button id="add-whitelist-btn">Add Domain</button>
+          </div>
+          <p class="whitelist-hint">Wildcards ( * ) are supported. For example, <strong>*google.com*</strong> matches any URL containing google.com.</p>
+        </div>
+
+        <div class="whitelist-list-section">
+          <h3>Active Whitelist Patterns</h3>
+          <div id="whitelist-list" class="whitelist-grid">
+            <!-- Dynamic Whitelist Cards injected here by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. ADVANCED TAB -->
+      <section id="tab-advanced" class="tab-panel">
+        <header class="panel-header">
+          <h2>Advanced Exclusions & Options</h2>
+          <p>Exempt tabs from suspension based on active features or fine-tune navigation.</p>
+        </header>
+
+        <div class="settings-stack">
+          <!-- Prevent suspension when playing audio -->
+          <div class="setting-card glass-panel">
+            <div class="setting-info">
+              <h3>Prevent Suspension for Audible Tabs</h3>
+              <p>Keep tabs that are actively playing music, podcasts, or videos from being suspended.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-prevent-audio">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <!-- Prevent suspension for pinned tabs -->
+          <div class="setting-card glass-panel">
+            <div class="setting-info">
+              <h3>Prevent Suspension for Pinned Tabs</h3>
+              <p>Protect crucial pinned tabs (like communication channels or chat servers) from being suspended.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-prevent-pinned">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <!-- Prevent suspension when form text inputs are active -->
+          <div class="setting-card glass-panel">
+            <div class="setting-info">
+              <h3>Active Form Fill Protection</h3>
+              <p>Exempt tabs from suspension if you have typed into active text forms, avoiding unsaved data loss.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-prevent-forms">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <!-- Auto-Restore Tab on Focus -->
+          <div class="setting-card glass-panel">
+            <div class="setting-info">
+              <h3>Auto-Restore on Focus</h3>
+              <p>When in Visual Hibernation mode, automatically unsuspend a tab immediately when it is selected, without requiring a manual click.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-auto-restore">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast notification for saved events -->
+  <div id="toast-notify" class="toast">Settings Saved Successfully</div>
+
+  <script src="options.js"></script>
+</body>
+</html>
